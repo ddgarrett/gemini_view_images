@@ -1,0 +1,16 @@
+{
+  "name": "gemini_view_images",
+  "version": "1.0.0",
+  "description": "Gemini Image Viewer",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^40.6.1"
+  }
+}
