@@ -8,6 +8,8 @@ let selectedMedia = [];
 let currentPage = 1;
 const ITEMS_PER_PAGE = 9; // 3x3 grid
 
+let currentTreeData = null;
+
 // Formatting
 function formatBytes(bytes, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
@@ -70,12 +72,7 @@ function buildTree(node, parentElement) {
             });
         } else {
             label.className = 'file-icon';
-            const sizeSpan = document.createElement('span');
-            sizeSpan.className = 'file-size';
-            sizeSpan.textContent = `(${formatBytes(child.size)})`;
-            
-            li.appendChild(label);
-            li.appendChild(sizeSpan);
+            li.appendChild(label); // No sizeSpan appended anymore
 
             label.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -129,28 +126,52 @@ function updateGrid() {
 }
 
 // Initialization and Event Listeners
-btnNew.addEventListener('click', async () => {
-    const data = await window.electronAPI.openFolder();
-    if (data) {
-        treeContainer.innerHTML = '';
-        const rootItem = document.createElement('div');
-        rootItem.textContent = data.name;
-        rootItem.className = 'folder-open';
-        rootItem.style.fontWeight = 'bold';
-        rootItem.style.cursor = 'pointer';
-        treeContainer.appendChild(rootItem);
-        
-        buildTree(data, treeContainer);
-        
-        // Load default view
-        selectedMedia = extractMedia(data);
-        currentPage = 1;
-        updateGrid();
-    }
-});
 
 // Pagination Controls
 document.getElementById('btn-first').addEventListener('click', () => { currentPage = 1; updateGrid(); });
 document.getElementById('btn-prev').addEventListener('click', () => { if (currentPage > 1) { currentPage--; updateGrid(); }});
 document.getElementById('btn-next').addEventListener('click', () => { const total = Math.ceil(selectedMedia.length/ITEMS_PER_PAGE); if(currentPage < total) { currentPage++; updateGrid(); }});
 document.getElementById('btn-last').addEventListener('click', () => { currentPage = Math.ceil(selectedMedia.length / ITEMS_PER_PAGE) || 1; updateGrid(); });
+
+// Function to render the UI from a data object (reused for New and Open)
+function loadTreeData(data) {
+    currentTreeData = data; // Store it for saving later
+    treeContainer.innerHTML = '';
+    
+    const rootItem = document.createElement('div');
+    rootItem.textContent = data.name;
+    rootItem.className = 'folder-open';
+    rootItem.style.fontWeight = 'bold';
+    rootItem.style.cursor = 'pointer';
+    treeContainer.appendChild(rootItem);
+    
+    buildTree(data, treeContainer);
+    
+    // Load default view
+    selectedMedia = extractMedia(data);
+    currentPage = 1;
+    updateGrid();
+}
+
+// "New" Button
+btnNew.addEventListener('click', async () => {
+    const data = await window.electronAPI.openFolder();
+    if (data) loadTreeData(data);
+});
+
+// "Save" Button
+document.getElementById('btn-save').addEventListener('click', async () => {
+    if (!currentTreeData) {
+        alert("No folder loaded to save!");
+        return;
+    }
+    const jsonString = JSON.stringify(currentTreeData, null, 2);
+    const success = await window.electronAPI.saveFile(jsonString);
+    if (success) console.log("File saved successfully.");
+});
+
+// "Open" Button
+document.getElementById('btn-open').addEventListener('click', async () => {
+    const data = await window.electronAPI.openFile();
+    if (data) loadTreeData(data);
+});

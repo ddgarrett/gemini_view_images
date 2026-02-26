@@ -63,3 +63,32 @@ ipcMain.handle('dialog:openFolder', async () => {
   const rootDir = filePaths[0];
   return scanDirectory(rootDir);
 });
+
+// Handle Saving the JSON
+ipcMain.handle('dialog:saveFile', async (event, jsonData) => {
+  const { canceled, filePath } = await dialog.showSaveDialog({
+    title: 'Save Folder Structure',
+    filters: [{ name: 'JSON Files', extensions: ['json'] }]
+  });
+  
+  if (!canceled && filePath) {
+    fs.writeFileSync(filePath, jsonData, 'utf-8');
+    return true;
+  }
+  return false;
+});
+
+// Handle Opening a saved JSON
+ipcMain.handle('dialog:openFile', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    title: 'Open Folder Structure',
+    properties: ['openFile'],
+    filters: [{ name: 'JSON Files', extensions: ['json'] }]
+  });
+  
+  if (!canceled && filePaths.length > 0) {
+    const rawData = fs.readFileSync(filePaths[0], 'utf-8');
+    return JSON.parse(rawData);
+  }
+  return null;
+});
