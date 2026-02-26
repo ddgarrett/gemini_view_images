@@ -5,15 +5,30 @@ body, html { height: 100%; overflow: hidden; background: #1e1e1e; color: #ddd; }
 
 /* Left Side - Resizable via CSS */
 .sidebar {
-  width: 33.33%; 
+  /* width: 33.33%; */
+  width: 350px; /* Initial fixed width */
   min-width: 200px;
   max-width: 60%;
-  resize: horizontal; /* This makes it resizable */
-  overflow: hidden;   /* Keeps the resize handle neat */
+  /* resize: horizontal; /* This makes it resizable */
+  /* overflow: hidden;   /* Keeps the resize handle neat */
   display: flex;
   flex-direction: column;
-  border-right: 2px solid #333;
+  border-right: 1px solid #333;
   background: #252526;
+}
+
+/* The Draggable Divider */
+.resizer {
+  width: 4px;
+  cursor: col-resize;
+  background: #333;
+  transition: background 0.2s;
+  z-index: 10;
+}
+
+.resizer:hover, .resizer:active {
+  background: #4daafc; /* Highlights blue when dragging */
+  width: 6px; /* Slightly thicker for better grip */
 }
 
 .tree-container { 
@@ -44,8 +59,13 @@ li span {
 }
 
 /* Right Side */
+/* Ensure the main content takes up remaining space */
 .main-content {
-  flex-grow: 1; display: flex; flex-direction: column; padding: 10px;
+  flex: 1; 
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  min-width: 0; /* Prevents grid from breaking layout */
 }
 
 .grid-container {

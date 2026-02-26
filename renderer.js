@@ -191,3 +191,34 @@ document.getElementById('btn-open').addEventListener('click', async () => {
     const data = await window.electronAPI.openFile();
     if (data) loadTreeData(data);
 });
+
+// Resizable Sidebar Logic
+const resizer = document.getElementById('drag-bar');
+const sidebar = document.getElementById('sidebar');
+
+let isResizing = false;
+
+resizer.addEventListener('mousedown', (e) => {
+    isResizing = true;
+    document.body.style.cursor = 'col-resize';
+    // Prevent text selection while dragging
+    document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (!isResizing) return;
+
+    // Calculate new width based on mouse position
+    const newWidth = e.clientX;
+    
+    // Apply constraints
+    if (newWidth > 150 && newWidth < window.innerWidth * 0.8) {
+        sidebar.style.width = `${newWidth}px`;
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    isResizing = false;
+    document.body.style.cursor = 'default';
+    document.body.style.userSelect = 'auto';
+});
