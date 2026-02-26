@@ -127,8 +127,9 @@ function updateGrid() {
             div.appendChild(img);
         } else if (media.type === 'video') {
             const video = document.createElement('video');
-            video.src = `file://${media.path}#t=0.1`; // Load first frame
+            video.src = `file://${media.path}#t=0.1`;
             video.preload = 'metadata';
+            video.muted = true; // Add this to prevent browser playback blocks
             div.appendChild(video);
             
             const playIcon = document.createElement('div');
