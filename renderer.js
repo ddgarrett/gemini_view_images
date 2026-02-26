@@ -9,6 +9,7 @@ let currentPage = 1;
 const ITEMS_PER_PAGE = 9; // 3x3 grid
 
 let currentTreeData = null;
+let selectedNodes = new Set(); // Stores the actual selected data objects (folders/files)
 
 // Formatting
 function formatBytes(bytes, decimals = 2) {
@@ -51,41 +52,55 @@ function buildTree(node, parentElement) {
             
             buildTree(child, childrenContainer); // Recursive call
 
-            // Expand/Collapse and Selection
-            label.addEventListener('click', (e) => {
-                e.stopPropagation();
-                // Toggle folder
-                const isHidden = childrenContainer.classList.toggle('hidden');
-                if (isHidden) {
-                    label.classList.replace('folder-open', 'folder-icon');
-                } else {
-                    label.classList.replace('folder-icon', 'folder-open');
-                }
-                
-                // Select and display contents
-                document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
-                label.classList.add('selected');
-                
-                selectedMedia = extractMedia(child);
-                currentPage = 1;
-                updateGrid();
-            });
+            label.addEventListener('click', (e) => handleSelection(e, child, label));
         } else {
             label.className = 'file-icon';
             li.appendChild(label); // No sizeSpan appended anymore
-
-            label.addEventListener('click', (e) => {
-                e.stopPropagation();
-                document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
-                label.classList.add('selected');
-                
-                selectedMedia = [child];
-                currentPage = 1;
-                updateGrid();
-            });
-        }
+            label.addEventListener('click', (e) => handleSelection(e, child, label));
+        }   
     });
 }
+
+function refreshMediaGallery() {
+    let allMedia = [];
+    
+    selectedNodes.forEach(node => {
+        allMedia = allMedia.concat(extractMedia(node));
+    });
+
+    // Remove duplicates (e.g., if a folder and its child are both selected)
+    selectedMedia = [...new Set(allMedia)]; 
+    
+    currentPage = 1;
+    updateGrid();
+}
+
+const handleSelection = (e, node, label) => {
+    e.stopPropagation();
+
+    if (!(e.ctrlKey || e.metaKey)) {
+        // Standard click: Clear previous and select only this
+        selectedNodes.clear();
+        document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+    }
+
+    if (selectedNodes.has(node)) {
+        selectedNodes.delete(node);
+        label.classList.remove('selected');
+    } else {
+        selectedNodes.add(node);
+        label.classList.add('selected');
+    }
+
+    // Special case for folders: still toggle the expand/collapse on click
+    if (node.type === 'folder' && !(e.ctrlKey || e.metaKey)) {
+        const childrenContainer = label.nextElementSibling;
+        const isHidden = childrenContainer.classList.toggle('hidden');
+        label.classList.replace(isHidden ? 'folder-open' : 'folder-icon', isHidden ? 'folder-icon' : 'folder-open');
+    }
+
+    refreshMediaGallery();
+};
 
 // Update the 3x3 Grid based on pagination
 function updateGrid() {

@@ -35,7 +35,13 @@ li span {
 .folder-open::before { content: '📂 '; }
 .file-icon::before { content: '📄 '; }
 .hidden { display: none; }
-.selected { color: #4daafc; font-weight: bold; }
+
+.selected { 
+  background-color: #094771; /* High-contrast selection background */
+  color: #ffffff; 
+  font-weight: bold;
+  border-radius: 2px;
+}
 
 /* Right Side */
 .main-content {
