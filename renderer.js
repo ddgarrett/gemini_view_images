@@ -10,6 +10,8 @@ const ITEMS_PER_PAGE = 9; // 3x3 grid
 
 let currentTreeData = null;
 let selectedNodes = new Set(); // Stores the actual selected data objects (folders/files)
+let flatNodeList = []; // Flat list of all clickable nodes in DOM order
+let lastSelectedIndex = null; // Anchor index for shift-click range selection
 
 // Formatting
 function formatBytes(bytes, decimals = 2) {
@@ -46,6 +48,10 @@ function buildTree(node, parentElement) {
             label.className = 'folder-icon';
             li.appendChild(label);
             
+            const index = flatNodeList.length;
+            flatNodeList.push({ node: child, label });
+            label.dataset.index = String(index);
+            
             const childrenContainer = document.createElement('div');
             childrenContainer.className = 'hidden';
             li.appendChild(childrenContainer);
@@ -56,6 +62,11 @@ function buildTree(node, parentElement) {
         } else {
             label.className = 'file-icon';
             li.appendChild(label); // No sizeSpan appended anymore
+            
+            const index = flatNodeList.length;
+            flatNodeList.push({ node: child, label });
+            label.dataset.index = String(index);
+            
             label.addEventListener('click', (e) => handleSelection(e, child, label));
         }   
     });
@@ -78,7 +89,35 @@ function refreshMediaGallery() {
 const handleSelection = (e, node, label) => {
     e.stopPropagation();
 
-    if (!(e.ctrlKey || e.metaKey)) {
+    const index = parseInt(label.dataset.index, 10);
+    const hasToggleModifier = e.ctrlKey || e.metaKey;
+    const isRangeSelect = e.shiftKey && lastSelectedIndex !== null;
+
+    if (isRangeSelect) {
+        // Shift-click range selection
+        if (!hasToggleModifier) {
+            selectedNodes.clear();
+            document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+        }
+
+        const start = Math.min(lastSelectedIndex, index);
+        const end = Math.max(lastSelectedIndex, index);
+
+        for (let i = start; i <= end; i++) {
+            const item = flatNodeList[i];
+            if (!item) continue;
+            if (!selectedNodes.has(item.node)) {
+                selectedNodes.add(item.node);
+                item.label.classList.add('selected');
+            }
+        }
+
+        refreshMediaGallery();
+        return;
+    }
+
+    // Non-range selection
+    if (!hasToggleModifier) {
         // Standard click: Clear previous and select only this
         selectedNodes.clear();
         document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
@@ -92,13 +131,14 @@ const handleSelection = (e, node, label) => {
         label.classList.add('selected');
     }
 
-    // Special case for folders: still toggle the expand/collapse on click
-    if (node.type === 'folder' && !(e.ctrlKey || e.metaKey)) {
+    // Special case for folders: still toggle the expand/collapse on plain click
+    if (node.type === 'folder' && !hasToggleModifier && !e.shiftKey) {
         const childrenContainer = label.nextElementSibling;
         const isHidden = childrenContainer.classList.toggle('hidden');
         label.classList.replace(isHidden ? 'folder-open' : 'folder-icon', isHidden ? 'folder-icon' : 'folder-open');
     }
 
+    lastSelectedIndex = index;
     refreshMediaGallery();
 };
 
@@ -153,6 +193,9 @@ document.getElementById('btn-last').addEventListener('click', () => { currentPag
 function loadTreeData(data) {
     currentTreeData = data; // Store it for saving later
     treeContainer.innerHTML = '';
+    flatNodeList = [];
+    lastSelectedIndex = null;
+    selectedNodes.clear();
     
     const rootItem = document.createElement('div');
     rootItem.textContent = data.name;
