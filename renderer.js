@@ -2,11 +2,12 @@ const btnNew = document.getElementById('btn-new');
 const treeContainer = document.getElementById('tree-container');
 const gridContainer = document.getElementById('grid-container');
 const pageCounter = document.getElementById('page-counter');
+const pageSizeSelect = document.getElementById('page-size');
 
 // Pagination State
 let selectedMedia = [];
 let currentPage = 1;
-const ITEMS_PER_PAGE = 9; // 3x3 grid
+let itemsPerPage = 9; // default 3x3 grid
 
 let currentTreeData = null;
 let selectedNodes = new Set(); // Stores the actual selected data objects (folders/files)
@@ -156,10 +157,16 @@ const handleSelection = (e, node, label) => {
     refreshMediaGallery();
 };
 
-// Update the 3x3 Grid based on pagination
+function updateGridLayout() {
+    const gridSize = Math.sqrt(itemsPerPage) || 1;
+    gridContainer.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+    gridContainer.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+}
+
+// Update the Grid based on pagination and layout
 function updateGrid() {
     gridContainer.innerHTML = '';
-    const totalPages = Math.ceil(selectedMedia.length / ITEMS_PER_PAGE) || 1;
+    const totalPages = Math.ceil(selectedMedia.length / itemsPerPage) || 1;
     
     // Safety check for current page
     if (currentPage > totalPages) currentPage = totalPages;
@@ -167,8 +174,8 @@ function updateGrid() {
 
     pageCounter.textContent = `Page ${currentPage} of ${totalPages} pages`;
 
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, selectedMedia.length);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, selectedMedia.length);
     const itemsToShow = selectedMedia.slice(startIndex, endIndex);
 
     itemsToShow.forEach(media => {
@@ -200,8 +207,21 @@ function updateGrid() {
 // Pagination Controls
 document.getElementById('btn-first').addEventListener('click', () => { currentPage = 1; updateGrid(); });
 document.getElementById('btn-prev').addEventListener('click', () => { if (currentPage > 1) { currentPage--; updateGrid(); }});
-document.getElementById('btn-next').addEventListener('click', () => { const total = Math.ceil(selectedMedia.length/ITEMS_PER_PAGE); if(currentPage < total) { currentPage++; updateGrid(); }});
-document.getElementById('btn-last').addEventListener('click', () => { currentPage = Math.ceil(selectedMedia.length / ITEMS_PER_PAGE) || 1; updateGrid(); });
+document.getElementById('btn-next').addEventListener('click', () => { const total = Math.ceil(selectedMedia.length / itemsPerPage); if (currentPage < total) { currentPage--; currentPage++; currentPage = Math.min(currentPage + 0, total); currentPage++; updateGrid(); }});
+document.getElementById('btn-last').addEventListener('click', () => { currentPage = Math.ceil(selectedMedia.length / itemsPerPage) || 1; updateGrid(); });
+
+// Page size selector
+if (pageSizeSelect) {
+    pageSizeSelect.addEventListener('change', () => {
+        const value = parseInt(pageSizeSelect.value, 10);
+        if (!Number.isNaN(value) && value > 0) {
+            itemsPerPage = value;
+            currentPage = 1;
+            updateGridLayout();
+            updateGrid();
+        }
+    });
+}
 
 // Function to render the UI from a data object (reused for New and Open)
 function loadTreeData(data) {
@@ -223,6 +243,7 @@ function loadTreeData(data) {
     // Load default view
     selectedMedia = extractMedia(data);
     currentPage = 1;
+    updateGridLayout();
     updateGrid();
 }
 

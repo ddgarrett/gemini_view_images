@@ -97,6 +97,21 @@ li span {
   display: flex; justify-content: space-between; align-items: center;
   padding-top: 10px; border-top: 1px solid #444; margin-top: 10px;
 }
+.page-size-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.page-size-selector label {
+  font-size: 0.9rem;
+}
+select#page-size {
+  background: #3c3c3c;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 4px 8px;
+}
 button {
   padding: 6px 12px; cursor: pointer; background: #3c3c3c;
   color: white; border: 1px solid #555; border-radius: 4px;
