@@ -90,12 +90,13 @@ const handleSelection = (e, node, label) => {
     e.stopPropagation();
 
     const index = parseInt(label.dataset.index, 10);
-    const hasToggleModifier = e.ctrlKey || e.metaKey;
-    const isRangeSelect = e.shiftKey && lastSelectedIndex !== null;
+    const hasToggleModifier = e.ctrlKey || e.metaKey;   // Ctrl (Win/Linux) or Cmd (macOS)
+    const isShift = e.shiftKey;
 
-    if (isRangeSelect) {
-        // Shift-click range selection
+    // Shift-click: range selection
+    if (isShift && lastSelectedIndex !== null) {
         if (!hasToggleModifier) {
+            // Fresh range selection
             selectedNodes.clear();
             document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
         }
@@ -106,36 +107,49 @@ const handleSelection = (e, node, label) => {
         for (let i = start; i <= end; i++) {
             const item = flatNodeList[i];
             if (!item) continue;
-            if (!selectedNodes.has(item.node)) {
+
+            if (hasToggleModifier && selectedNodes.has(item.node)) {
+                // Ctrl/Cmd + Shift: allow deselecting within the range
+                selectedNodes.delete(item.node);
+                item.label.classList.remove('selected');
+            } else if (!selectedNodes.has(item.node)) {
                 selectedNodes.add(item.node);
                 item.label.classList.add('selected');
             }
         }
 
+        lastSelectedIndex = index;
         refreshMediaGallery();
         return;
     }
 
-    // Non-range selection
+    // Non-shift clicks
     if (!hasToggleModifier) {
-        // Standard click: Clear previous and select only this
+        // Plain click: clear others and select only this item
         selectedNodes.clear();
         document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
-    }
 
-    if (selectedNodes.has(node)) {
-        selectedNodes.delete(node);
-        label.classList.remove('selected');
-    } else {
         selectedNodes.add(node);
         label.classList.add('selected');
+    } else {
+        // Ctrl/Cmd click: toggle just this item, keep others
+        if (selectedNodes.has(node)) {
+            selectedNodes.delete(node);
+            label.classList.remove('selected');
+        } else {
+            selectedNodes.add(node);
+            label.classList.add('selected');
+        }
     }
 
-    // Special case for folders: still toggle the expand/collapse on plain click
-    if (node.type === 'folder' && !hasToggleModifier && !e.shiftKey) {
+    // Folder expand/collapse only on plain (non-modifier, non-shift) click
+    if (node.type === 'folder' && !hasToggleModifier && !isShift) {
         const childrenContainer = label.nextElementSibling;
         const isHidden = childrenContainer.classList.toggle('hidden');
-        label.classList.replace(isHidden ? 'folder-open' : 'folder-icon', isHidden ? 'folder-icon' : 'folder-open');
+        label.classList.replace(
+            isHidden ? 'folder-open' : 'folder-icon',
+            isHidden ? 'folder-icon' : 'folder-open'
+        );
     }
 
     lastSelectedIndex = index;
